@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CLAW FEES — it grabs the fee out of every meme you buy</title>
+<meta name="description" content="Every time somebody buys a meme, the claw drops into that trade and goes for the fee. The grip is rolled on chain and it is weak, so it misses a lot — and everything it does carry out is split: half to everyone holding $CLAW, the rest burns.">
+<meta property="og:title" content="CLAW FEES — it grabs the fee out of every meme you buy">
+<meta property="og:description" content="One buy, one grab, one very weak claw.">
+<meta property="og:image" content="assets/og.png">
+<meta name="theme-color" content="#f6efdc">
+<link rel="icon" href="assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f6efdc; --paper2:#efe4c8; --ink:#151016;
+  --red:#d92d2d; --red2:#9b1414; --yellow:#ffc62b; --cyan:#22c6e6; --blue:#1f6fd0;
+  --green:#2fa84f; --pink:#ff7fb2; --dim:#6b6270;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"Nunito",system-ui,sans-serif; font-size:17px; line-height:1.6; font-weight:400;
+  overflow-x:clip;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(217,45,45,.05) 0 14px, transparent 14px 28px);
+}
+img{max-width:100%}
+a{color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px;position:relative;z-index:1}
+h1,h2,h3,.px{font-family:"Press Start 2P","Nunito",sans-serif;font-weight:400;line-height:1.35;letter-spacing:0}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.tiny{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+
+/* lights strip */
+#lights{height:12px;background:repeating-linear-gradient(90deg,var(--yellow) 0 16px,var(--red) 16px 32px);animation:run 1.2s linear infinite;background-size:32px 100%}
+@keyframes run{to{background-position:32px 0}}
+
+/* bar */
+#bar{position:sticky;top:0;z-index:60;background:var(--red);border-bottom:4px solid var(--ink)}
+#bar .wrap{display:flex;align-items:center;gap:16px;height:62px}
+.mark{font-family:"Press Start 2P",sans-serif;font-size:19px;color:#fff6e5;text-decoration:none;display:flex;align-items:center;gap:10px;
+  text-shadow:3px 3px 0 var(--red2)}
+.mark img{height:30px;image-rendering:pixelated}
+#nav{display:flex;gap:18px;margin-left:8px}
+#nav a{font-size:14px;font-weight:700;color:#ffe7c9;text-decoration:none}
+#nav a:hover{color:#fff;text-decoration:underline}
+.spacer{flex:1}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;border:2px solid var(--ink);
+  background:var(--paper);color:var(--ink);padding:8px 11px;cursor:pointer;text-decoration:none;display:inline-block;line-height:1;box-shadow:2px 2px 0 var(--ink)}
+.chip:hover{background:var(--yellow)}
+.chip.on{background:var(--yellow)}
+.chip.soon{opacity:.5;cursor:not-allowed}
+.chip .sm{display:none}
+
+/* ticker */
+#tick{background:var(--ink);color:var(--yellow);overflow:hidden;white-space:nowrap}
+#tick div{display:inline-block;padding:8px 0;animation:mq 42s linear infinite;font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+#tick b{color:#fff;font-weight:400;padding:0 14px}
+@keyframes mq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* hero */
+#hero{padding:48px 0 30px}
+.hero-in{display:grid;grid-template-columns:1.05fr .95fr;gap:38px;align-items:center}
+h1{font-size:clamp(20px,3.2vw,34px);margin:14px 0 20px;line-height:1.5}
+h1 em{font-style:normal;color:var(--red)}
+.lede{font-size:18px;max-width:46ch}
+.acts{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:24px 0 14px}
+.btn{font-family:"Press Start 2P",sans-serif;font-size:12px;padding:16px 20px;cursor:pointer;text-decoration:none;display:inline-block;
+  border:3px solid var(--ink);background:var(--red);color:#fff3e2;box-shadow:0 6px 0 var(--ink);transition:transform .07s,box-shadow .07s}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--ink)}
+.btn.yellow{background:var(--yellow);color:var(--ink)}
+.btn.cream{background:var(--paper2);color:var(--ink)}
+.meta{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--dim)}
+
+.machinebox{position:relative;display:flex;flex-direction:column;align-items:center}
+#machine{width:100%;max-width:390px;image-rendering:pixelated;cursor:pointer;filter:drop-shadow(0 14px 0 rgba(21,16,22,.18));
+  animation:wob 4.6s ease-in-out infinite alternate}
+@keyframes wob{to{transform:rotate(1deg) translateY(-6px)}}
+.tag{position:absolute;top:6px;right:-6px;z-index:4;background:var(--yellow);border:3px solid var(--ink);box-shadow:3px 3px 0 var(--ink);
+  font-family:"Press Start 2P",sans-serif;font-size:9px;padding:9px 10px;transform:rotate(5deg);animation:wig 2.4s ease-in-out infinite}
+@keyframes wig{50%{transform:rotate(-4deg) translateY(-4px)}}
+.playnow{margin-top:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center}
+.drop{position:absolute;inset:0;pointer-events:none;z-index:5}
+.coin{position:absolute;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fff0b0,#e8b420 60%,#8a6414);border:2px solid var(--ink)}
+
+/* sections */
+section{padding:54px 0;border-top:4px solid var(--ink)}
+.head{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:10px}
+.head h2{font-size:clamp(16px,2.4vw,24px);margin:0}
+.head .tiny{margin-left:auto}
+.sub{max-width:64ch;margin:0 0 24px}
+
+/* game */
+#cab{background:var(--paper2)}
+.gamegrid{display:grid;grid-template-columns:1.42fr .58fr;gap:22px;align-items:start}
+.panel{border:4px solid var(--ink);background:var(--paper);box-shadow:8px 8px 0 rgba(21,16,22,.2)}
+.panel .ph{border-bottom:4px solid var(--ink);padding:10px 14px;display:flex;align-items:center;gap:12px;background:var(--red);color:#fff3e2}
+.panel .ph b{font-family:"Press Start 2P",sans-serif;font-size:11px;font-weight:400}
+.panel .ph .tiny{color:#ffd9a8}
+.panel .pb{padding:14px}
+#cvWrap{position:relative;background:#12131c}
+#cv{display:block;width:100%;height:auto;touch-action:none;cursor:pointer}
+#hintBar{position:absolute;left:0;right:0;bottom:0;padding:8px 12px;background:var(--ink);color:var(--yellow);
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;text-align:center}
+.gctl{display:flex;gap:10px;padding:14px;border-top:4px solid var(--ink);align-items:center;flex-wrap:wrap}
+#actBtn{flex:1;min-width:220px;font-family:"Press Start 2P",sans-serif;font-size:13px;padding:18px 14px;border:3px solid var(--ink);
+  background:var(--red);color:#fff3e2;cursor:pointer;user-select:none;box-shadow:0 6px 0 var(--ink)}
+#actBtn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--ink)}
+#actBtn:disabled{opacity:.5}
+.arrowbtn{font-family:"Press Start 2P",sans-serif;font-size:14px;padding:16px 15px;border:3px solid var(--ink);background:var(--yellow);cursor:pointer;box-shadow:0 5px 0 var(--ink)}
+.arrowbtn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.stat{border:3px solid var(--ink);background:var(--paper2);padding:9px 10px}
+.stat b{display:block;font-family:"IBM Plex Mono",monospace;font-size:19px;font-weight:600}
+.stat i{font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+#log{height:130px;overflow:auto;border:3px solid var(--ink);background:#fffaf0;padding:8px 10px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;line-height:1.75}
+#log div{border-bottom:1px dashed #d9cdb4;padding:1px 0}
+#log b{color:var(--red)}
+
+/* shelf */
+.shelf{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:24px}
+.sl{border:3px solid var(--ink);background:var(--paper);padding:12px;text-align:center;position:relative;box-shadow:5px 5px 0 rgba(21,16,22,.16);min-width:0}
+.sl .box{height:104px;display:flex;align-items:center;justify-content:center}
+.sl img{image-rendering:pixelated;max-height:96px;width:auto}
+.sl b{display:block;font-family:"Press Start 2P",sans-serif;font-size:10px;margin:6px 0 6px;color:var(--red)}
+.sl p{margin:0;font-size:13.5px;text-align:left;color:#413a45}
+.sl.locked img{filter:grayscale(1) brightness(.35);opacity:.5}
+.sl.locked b,.sl.locked p{color:#9a92a3}
+.sl.locked:after{content:"NOT PULLED YET";position:absolute;top:8px;left:50%;transform:translateX(-50%) rotate(-4deg);
+  font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.14em;background:var(--ink);color:var(--paper);padding:3px 7px}
+
+/* pins */
+.pins{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.pin{border:3px solid var(--ink);background:var(--paper);padding:18px 16px;box-shadow:6px 6px 0 rgba(21,16,22,.16);min-width:0;position:relative}
+.pin:nth-child(2){background:#fdf4de}
+.pin:nth-child(3){background:#f7eddd}
+.pin .n{position:absolute;top:-16px;left:14px;width:32px;height:32px;border:3px solid var(--ink);background:var(--yellow);
+  display:flex;align-items:center;justify-content:center;font-family:"Press Start 2P",sans-serif;font-size:11px}
+.pin h3{margin:12px 0 10px;font-size:13px;color:var(--red)}
+.pin p{margin:0;font-size:15px}
+.pin .st{margin-top:12px;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+
+/* pot */
+.potgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.pt{border:3px solid var(--ink);padding:20px;min-width:0;background:var(--paper)}
+.pt:nth-child(1){background:#ffe9e9}
+.pt:nth-child(2){background:#fff6dc}
+.pt:nth-child(3){background:#e9f6ff}
+.pt .big{font-family:"Press Start 2P",sans-serif;font-size:15px;color:var(--red);line-height:1.6}
+.pt .who{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:10px 0 12px}
+.pt p{margin:0;font-size:14.5px}
+
+/* feed */
+.feedbox{border:4px solid var(--ink);background:var(--paper);box-shadow:8px 8px 0 rgba(21,16,22,.18)}
+.feedbox .ph{border-bottom:4px solid var(--ink);padding:11px 15px;background:var(--ink);color:var(--yellow);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.feedbox .ph b{font-family:"Press Start 2P",sans-serif;font-size:11px;font-weight:400}
+.row{display:grid;grid-template-columns:46px 54px 1fr 132px;gap:12px;align-items:center;padding:9px 15px;border-bottom:2px dashed #ddd0b6;font-size:14.5px}
+.row:nth-child(even){background:#fffaf0}
+.row .rk{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--dim)}
+.row .sp2{height:34px;display:flex;align-items:center;justify-content:center}
+.row .sp2 img{image-rendering:pixelated;max-height:32px;width:auto}
+.row .hn{font-family:"IBM Plex Mono",monospace;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.row .res{font-family:"IBM Plex Mono",monospace;font-size:12px;text-align:right}
+.row .res.win{color:var(--green);font-weight:600}
+.row .res.miss{color:var(--dim)}
+.row.fresh{animation:flash 1.5s ease-out}
+@keyframes flash{from{background:#ffe9a8}to{background:transparent}}
+.counters{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:20px}
+.ct{border:3px solid var(--ink);background:var(--paper);padding:16px;min-width:0}
+.ct b{display:block;font-family:"IBM Plex Mono",monospace;font-size:24px;color:var(--red)}
+.ct i{font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+
+footer{border-top:4px solid var(--ink);background:var(--ink);color:var(--paper);padding:32px 0 42px}
+footer .wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+footer .mark{color:var(--yellow);text-shadow:3px 3px 0 #000}
+footer .chip{background:#241d26;color:var(--paper);border-color:var(--paper);box-shadow:2px 2px 0 var(--paper)}
+
+#winWrap{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;background:rgba(21,16,22,.7);padding:20px}
+#winWrap.show{display:flex}
+#winCard{max-width:520px;width:100%;background:var(--paper);border:4px solid var(--ink);box-shadow:12px 12px 0 rgba(0,0,0,.45);padding:26px;text-align:center;position:relative}
+#winCard h3{font-size:18px;margin:12px 0 12px;color:var(--red)}
+#winCard p{margin:0 0 18px}
+#winCard .row2{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:6px}
+#winCard .row2 img{image-rendering:pixelated;height:56px;width:auto}
+#rain{position:fixed;inset:0;pointer-events:none;z-index:140}
+
+@media (max-width:1000px){
+  .hero-in{grid-template-columns:1fr;gap:22px}
+  .hero-in>div:last-child{order:-1}
+  #machine{max-width:260px}
+  .gamegrid{grid-template-columns:1fr}
+  .pins,.shelf{grid-template-columns:1fr 1fr}
+  .potgrid{grid-template-columns:1fr}
+  #nav{display:none}
+}
+@media (max-width:620px){
+  .chip .lg{display:none} .chip .sm{display:inline}
+  #bar .wrap{gap:7px;padding:0 14px} .chip{padding:7px 8px}
+  .mark{font-size:15px} .mark img{height:24px}
+}
+@media (max-width:560px){
+  body{font-size:16px}
+  .pins,.shelf,.counters{grid-template-columns:1fr}
+  .row{grid-template-columns:30px 44px 1fr;gap:8px;font-size:13px}
+  .row .res{display:none}
+  section{padding:38px 0}
+  #actBtn{font-size:11px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="lights"></div>
+<div id="bar"><div class="wrap">
+  <a class="mark" href="#top">CLAW<span style="color:#ffc62b">FEES</span> <img id="markImg" src="assets/p-pepe.webp" alt="one of the plushes in the box"></a>
+  <nav id="nav">
+    <a href="#cab">The machine</a>
+    <a href="#how">How it works</a>
+    <a href="#shelf">In the box</a>
+    <a href="#feed">Recent grabs</a>
+  </nav>
+  <div class="spacer"></div>
+  <button class="chip" id="sfxBtn"><span class="lg">Sound: on</span><span class="sm">SFX</span></button>
+  <button class="chip" id="musBtn"><span class="lg">Music: off</span><span class="sm">MUS</span></button>
+  <a class="chip xLink" id="xBtn" href="#" target="_blank" rel="noopener">X</a>
+  <a class="chip soon" id="buyBtn" href="#"><span class="lg">Buy $CLAW</span><span class="sm">Buy</span></a>
+</div></div>
+
+<div id="tick"><div id="tickIn"></div></div>
+
+<a id="top"></a>
+<section id="hero" style="border-top:none">
+ <div class="wrap hero-in">
+  <div>
+    <div class="tiny">Robinhood Chain &middot; the machine is plugged into the order flow</div>
+    <h1>It grabs the fee out of every meme you buy. <em>Badly.</em></h1>
+    <p class="lede">Every time somebody buys a meme on the chain, the claw drops into that trade and goes for the fee. The grip is rolled on chain and it is mostly terrible, so it usually comes up with nothing or lets go halfway across the box. Whatever it drops falls into the pile where everybody can watch it pile up, and whatever it does carry all the way to the chute gets split on the spot: half to everyone holding $CLAW, the rest burns.</p>
+    <div class="acts">
+      <a class="btn" href="#cab">▶ Work the claw</a>
+      <a class="btn cream" href="#shelf">What is in the box</a>
+      <a class="btn cream" href="#how">The rules</a>
+    </div>
+    <div class="meta">$CLAW on pons &middot; one buy = one grab &middot; grip rolled on chain, nobody tunes it</div>
+  </div>
+  <div>
+    <div class="machinebox">
+      <span class="tag">tap it &middot; fees fall out</span>
+      <img id="machine" src="assets/machine.webp" alt="the cabinet, packed with the memes people keep buying">
+      <div class="drop" id="drop"></div>
+      <div class="playnow">
+        <a class="btn yellow" href="#cab">play the machine</a>
+        <span class="tiny">8 fees &middot; 1 weak claw</span>
+      </div>
+    </div>
+  </div>
+ </div>
+</section>
+
+<section id="cab">
+ <div class="wrap">
+  <div class="head"><h2>Work the claw</h2><span class="tiny" id="wonCount">0 of 8 pulled out</span></div>
+  <p class="sub">Line the claw up over the meme somebody is buying, drop in and stop the grip meter as high as you can — that number is the only thing between you and the sound of the fee hitting the pile again. A perfect grip still slips sometimes, because that is the whole business model of a claw machine and this one is at least honest about which side of it you are on.</p>
+
+  <div class="gamegrid">
+    <div class="panel">
+      <div class="ph"><b>CABINET #001</b><span class="tiny" id="phase">insert coin</span></div>
+      <div id="cvWrap">
+        <canvas id="cv" width="960" height="560"></canvas>
+        <div id="hintBar">drag the claw or use ← → &middot; drop into the buy &middot; then stop the grip meter</div>
+      </div>
+      <div class="gctl">
+        <button class="arrowbtn" id="leftBtn">◀</button>
+        <button id="actBtn">Drop the claw</button>
+        <button class="arrowbtn" id="rightBtn">▶</button>
+        <button class="chip" id="resetBtn">New machine</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel" style="margin-bottom:16px">
+        <div class="ph"><b>THE TAKE</b></div>
+        <div class="pb">
+          <div class="stats">
+            <div class="stat"><b id="stPot">$0</b><i>fees in the box</i></div>
+            <div class="stat"><b id="stCoins">0</b><i>buys gone through</i></div>
+            <div class="stat"><b id="stWon">0</b><i>fees carried out</i></div>
+            <div class="stat"><b id="stDrops">0</b><i>times it slipped</i></div>
+          </div>
+          <div style="margin-top:12px" class="tiny">grip on last attempt</div>
+          <div style="border:3px solid var(--ink);height:18px;background:#fffaf0;position:relative;margin-top:5px">
+            <i id="gripBar" style="position:absolute;left:0;top:0;bottom:0;width:0%;background:repeating-linear-gradient(90deg,var(--red) 0 8px,var(--red2) 8px 12px);display:block"></i>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ph"><b>MACHINE LOG</b></div>
+        <div class="pb"><div id="log"></div></div>
+      </div>
+    </div>
+  </div>
+ </div>
+</section>
+
+<section id="shelf">
+ <div class="wrap">
+  <div class="head"><h2>What is in the box</h2><span class="tiny">nine memes, eight fees to pull out</span></div>
+  <p class="sub">Every meme people keep buying through this cabinet, and how the claw does on each of them. One of them has never had a single fee carried out of it and the machine keeps it at the back where the glass is dirtiest.</p>
+  <div class="shelf" id="shelfGrid"></div>
+ </div>
+</section>
+
+<section id="how">
+ <div class="wrap">
+  <div class="head"><h2>How it works</h2><span class="tiny">four rules on the side of the cabinet</span></div>
+  <p class="sub">Nothing about this is hidden, which is the joke: everybody can read the rules and everybody keeps buying through it anyway.</p>
+  <div class="pins">
+    <div class="pin"><span class="n">1</span>
+      <h3>The buy</h3>
+      <p>Somebody buys a meme, and the claw drops into that exact trade looking for the fee. It does not care whose wallet it is, it does not ask first, and it gets exactly one attempt per buy.</p>
+      <div class="st">one buy &middot; one attempt &middot; no queue</div>
+    </div>
+    <div class="pin"><span class="n">2</span>
+      <h3>The grab</h3>
+      <p>Grip strength is rolled on chain for every single attempt and most rolls are pathetic. Nobody tunes it, nobody can buy a better one, and the machine has no idea whose trade it is when it decides how badly to hold on.</p>
+      <div class="st">rolled per attempt &middot; nobody sets it</div>
+    </div>
+    <div class="pin"><span class="n">3</span>
+      <h3>The drop</h3>
+      <p>Whatever slips falls straight into the pile under the glass and stays there in plain sight. Nobody gets it back, nothing is refunded, and there is no second attempt on a trade that has already gone through.</p>
+      <div class="st">everything it drops stays visible in the box</div>
+    </div>
+    <div class="pin"><span class="n">4</span>
+      <h3>The payout</h3>
+      <p>Anything that makes it all the way to the chute is split in the same block: half goes back to everyone holding $CLAW and the rest burns. Then the machine resets, a new meme drops into the box and the claw waits for the next buy.</p>
+      <div class="st">half to holders &middot; the rest burns</div>
+    </div>
+  </div>
+ </div>
+</section>
+
+<section id="pot">
+ <div class="wrap">
+  <div class="head"><h2>Where the fees go</h2><span class="tiny">under the glass, in plain sight</span></div>
+  <p class="sub">A fee that this machine touches has exactly three places it can end up, and all of them are visible from the front of the cabinet.</p>
+  <div class="potgrid">
+    <div class="pt">
+      <div class="big">half<br>to the holders</div>
+      <div class="who">everyone holding $CLAW</div>
+      <p>Paid out of every fee that actually makes it to the chute, in the same block it lands. Nothing to claim and nothing to stake — you are simply standing on the right side of the glass.</p>
+    </div>
+    <div class="pt">
+      <div class="big">the rest<br>burns</div>
+      <div class="who">straight down the chute</div>
+      <p>Bought back and sent to a dead address in the same block as the trade that paid for it. Every clean grab makes the supply smaller and the machine louder.</p>
+    </div>
+    <div class="pt">
+      <div class="big">everything<br>it drops</div>
+      <div class="who">stays in the box</div>
+      <p>The pile under the glass is every fee this claw has fumbled, sitting there where anybody can count it. It is not going back to the buyer and it is not going anywhere else either.</p>
+    </div>
+  </div>
+ </div>
+</section>
+
+<section id="feed">
+ <div class="wrap">
+  <div class="head"><h2>Recent grabs</h2><span class="tiny">live from the cabinet</span></div>
+  <p class="sub">Every buy the claw has dropped into over the last few minutes, the rare clean grabs and all the rest of it.</p>
+  <div class="feedbox">
+    <div class="ph"><b>THE ORDER FLOW</b><span class="tiny" id="feedLive">reading the chain…</span></div>
+    <div id="feedRows"></div>
+  </div>
+  <div class="counters">
+    <div class="ct"><b id="cPot">0</b><i>$CLAW sitting in the box</i></div>
+    <div class="ct"><b id="cTries">0</b><i>buys grabbed at</i></div>
+    <div class="ct"><b id="cWins">0</b><i>fees ever carried out</i></div>
+  </div>
+ </div>
+</section>
+
+<footer>
+ <div class="wrap">
+  <span class="mark">CLAW<span style="color:#fff6e5">FEES</span></span>
+  <span class="tiny" style="color:#a79cb0">one more buy and it will get one</span>
+  <div class="spacer"></div>
+  <a class="chip xLink" href="#" target="_blank" rel="noopener">X</a>
+  <span class="chip" id="caBox">CA: <b class="ca-val">soon</b></span>
+ </div>
+</footer>
+
+<div id="winWrap"><div id="winCard">
+  <div class="row2" id="winRow"></div>
+  <h3 id="winTitle">CABINET CLEARED</h3>
+  <p id="winText">Eight fees out of one very weak claw.</p>
+  <button class="btn yellow" id="winClose">back to the machine</button>
+</div></div>
+<div id="rain"></div>
+
+<script>
+/* ============ SETTINGS ============ */
+window.CONTRACT = "";
+window.TWITTER  = "";
+window.BUY_URL  = "";
+/* ================================== */
+var CA=(window.CONTRACT||"").trim(), TW=(window.TWITTER||"").trim(), BUY=(window.BUY_URL||"").trim();
+if(CA){
+  document.querySelectorAll(".ca-val").forEach(function(e){ e.textContent=CA.slice(0,6)+"…"+CA.slice(-4); });
+  document.getElementById("caBox").addEventListener("click",function(){
+    var b=this.querySelector("b"), old=b.textContent;
+    navigator.clipboard.writeText(CA).then(function(){ b.textContent="copied"; setTimeout(function(){ b.textContent=old; },1200); });
+  });
+}
+if(TW){ document.querySelectorAll("#xBtn,.xLink").forEach(function(a){ a.href=TW; }); }
+var buy=document.getElementById("buyBtn");
+if(BUY){ buy.href=BUY; buy.target="_blank"; buy.rel="noopener"; buy.classList.remove("soon"); }
+else{ buy.addEventListener("click",function(e){ e.preventDefault(); }); }
+</script>
+
+<script>
+/* ---------------- audio ---------------- */
+var AC=null, sfxOn=true, vol=1;
+function ac(){ try{ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==="suspended") AC.resume(); return AC; }catch(e){ return null; } }
+function tone(f1,f2,dur,type,g){
+  if(!sfxOn) return; var c=ac(); if(!c) return;
+  var o=c.createOscillator(), gg=c.createGain(), t=c.currentTime;
+  o.type=type||"square"; o.frequency.setValueAtTime(f1,t);
+  if(f2&&f2!==f1) o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+dur);
+  gg.gain.setValueAtTime(.0001,t); gg.gain.exponentialRampToValueAtTime((g||.05)*vol,t+.01);
+  gg.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(gg); gg.connect(c.destination); o.start(t); o.stop(t+dur+.05);
+}
+function noise(dur,f,q,g,sweep){
+  if(!sfxOn) return; var c=ac(); if(!c) return;
+  var n=Math.floor(c.sampleRate*dur), b=c.createBuffer(1,n,c.sampleRate), d=b.getChannelData(0);
+  for(var i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
+  var s=c.createBufferSource(); s.buffer=b;
+  var bp=c.createBiquadFilter(); bp.type="bandpass"; bp.frequency.setValueAtTime(f,c.currentTime); bp.Q.value=q||1;
+  if(sweep) bp.frequency.exponentialRampToValueAtTime(Math.max(60,sweep),c.currentTime+dur);
+  var gg=c.createGain(); gg.gain.setValueAtTime((g||.07)*vol,c.currentTime);
+  gg.gain.exponentialRampToValueAtTime(.0001,c.currentTime+dur);
+  s.connect(bp); bp.connect(gg); gg.connect(c.destination); s.start(); s.stop(c.currentTime+dur+.02);
+}
+function coinIn(){ tone(880,1320,.08,"square",.05); setTimeout(function(){ tone(1320,1760,.09,"square",.045); },70); setTimeout(function(){ tone(660,990,.12,"square",.04); },150); }
+function motor(){ noise(.16,240,2.5,.035,180); }
+function servo(){ tone(180,120,.18,"sawtooth",.035); }
+function clank(){ noise(.12,1400,3,.08,600); tone(300,160,.12,"square",.04); }
+function slipSound(){ tone(520,120,.34,"sawtooth",.055); noise(.22,500,1.4,.06,160); }
+function winSound(){
+  var s=[523,659,784,1046,1319];
+  s.forEach(function(f,i){ setTimeout(function(){ tone(f,f*1.01,.16,"square",.05); },i*90); });
+}
+function coinSound(){ tone(1000+Math.random()*400,2000,.1,"square",.03); }
+
+/* music: arcade attract loop */
+var MU={on:false,t:null,step:0,next:0}, STEP=.15;
+var LEAD=[0,4,7,12,7,4,0,null, 2,5,9,14,9,5,2,null, 4,7,11,16,11,7,4,null, 5,9,12,17,12,9,5,null];
+var BASS=[0,null,0,null,-5,null,-5,null, -3,null,-3,null,-7,null,-7,null];
+function hz(s){ return 220*Math.pow(2,s/12); }
+function mnote(semi,at,dur,type,g,cut){
+  var c=ac(); if(!c) return;
+  var o=c.createOscillator(), gg=c.createGain(), f=c.createBiquadFilter();
+  f.type="lowpass"; f.frequency.value=cut||3000;
+  o.type=type; o.frequency.setValueAtTime(hz(semi),at);
+  gg.gain.setValueAtTime(.0001,at); gg.gain.exponentialRampToValueAtTime(g*vol,at+.012);
+  gg.gain.exponentialRampToValueAtTime(.0001,at+dur);
+  o.connect(f); f.connect(gg); gg.connect(c.destination); o.start(at); o.stop(at+dur+.05);
+}
+function musSchedule(){
+  var c=ac(); if(!c) return;
+  while(MU.next < c.currentTime+.4){
+    var at=Math.max(MU.next,c.currentTime+.02), i=MU.step;
+    var m=LEAD[i%LEAD.length]; if(m!==null) mnote(m+12,at,.16,"square",.026,4000);
+    var b=BASS[i%BASS.length]; if(b!==null) mnote(b-12,at,.2,"triangle",.055,700);
+    if(i%4===2) noise(.05,3000,1,.012);
+    MU.next+=STEP; MU.step++;
+  }
+}
+function musStart(){ var c=ac(); if(!c) return; MU.on=true; MU.next=c.currentTime+.1; if(!MU.t) MU.t=setInterval(musSchedule,70);
+  document.querySelector("#musBtn .lg").textContent="Music: on"; document.getElementById("musBtn").classList.add("on"); }
+function musStop(){ MU.on=false; if(MU.t){ clearInterval(MU.t); MU.t=null; }
+  document.querySelector("#musBtn .lg").textContent="Music: off"; document.getElementById("musBtn").classList.remove("on"); }
+document.getElementById("musBtn").onclick=function(){ MU.on?musStop():musStart(); };
+document.getElementById("sfxBtn").onclick=function(){ sfxOn=!sfxOn; this.querySelector(".lg").textContent="Sound: "+(sfxOn?"on":"off"); this.classList.toggle("on",sfxOn); };
+document.getElementById("sfxBtn").classList.add("on");
+document.addEventListener("visibilitychange",function(){
+  if(document.hidden&&MU.on&&MU.t){ clearInterval(MU.t); MU.t=null; }
+  else if(!document.hidden&&MU.on&&!MU.t){ var c=ac(); if(c) MU.next=c.currentTime+.1; MU.t=setInterval(musSchedule,70); }
+});
+
+/* ---------------- ticker ---------------- */
+var TICKS=["one buy · one grab · one very weak claw","it goes for the fee, not for you","whatever it drops stays in the box","the grip is rolled on chain and nobody tunes it","half of everything it carries out goes to the holders","the pile only ever gets deeper","it lifts it. it carries it. it lets go."];
+(function(){ var s=""; for(var r=0;r<2;r++) for(var i=0;i<TICKS.length;i++) s+=TICKS[i]+"<b>◆</b>"; document.getElementById("tickIn").innerHTML=s; })();
+
+/* ---------------- prizes ---------------- */
+var PRIZE=[
+ {k:"pepe",   n:"THE FROG",     p:"The one everybody comes for and the one everybody already has three of at home. It sits right at the front where the claw has the worst angle in the entire box."},
+ {k:"shiba",  n:"THE DOG",      p:"Wears a little blue cap and weighs about as much as a brick. Two people have had it above the rim of the chute and both of them are still talking about it."},
+ {k:"cat",    n:"THE WHITE CAT",p:"Smooth, round and completely without a single place for a claw to hold onto. Physically the hardest thing in the cabinet and it knows it."},
+ {k:"bunny",  n:"THE PINK BUNNY",p:"Ears long enough that the claw can actually catch one, which is the only reason anybody ever gets this one out. Half the wins on the shelf are just ears."},
+ {k:"penguin",n:"THE PENGUIN",  p:"Stands upright, tips over at the slightest touch and then lies there looking at you. Getting it out is mostly about catching it before it falls flat."},
+ {k:"hood",   n:"THE HOOD",     p:"Green hat, red feather, extremely pleased with itself. The feather is the best handle in the machine, assuming the claw is having one of its rare good days."},
+ {k:"fox",    n:"THE HAMSTER",  p:"Small, dense and wedged under two bigger plushes, which is the polite way of saying you are going to need a couple of coins for this one."},
+ {k:"smiley", n:"THE COOL COIN",p:"Sunglasses on, no arms, no legs, nothing at all to grab. It is a sphere with an attitude and it slides out of the claw like it planned to."},
+ {k:"wojak",  n:"THE GUY",      p:"Nobody has ever carried this one to the chute. He sits at the back of the box behind everybody else and watches every single attempt go wrong."}
+];
+var IMG={};
+PRIZE.forEach(function(p){ var i=new Image(); i.src="assets/p-"+p.k+".webp"; IMG[p.k]=i; });
+function psrc(k){ return "assets/p-"+k+".webp"; }
+
+/* navbar mark cycles the plushes */
+var markI=0;
+setInterval(function(){ markI=(markI+1)%PRIZE.length; document.getElementById("markImg").src=psrc(PRIZE[markI].k); },2600);
+
+/* coin spill from the cabinet */
+var dropBox=document.getElementById("drop");
+function dropCoin(x,y,host){
+  var box=host||dropBox;
+  var d=document.createElement("div"); d.className="coin";
+  var W=box.clientWidth||320, H=box.clientHeight||320;
+  if(x===undefined){ x=Math.random()*W; y=-20; }
+  d.style.left=(x-12)+"px"; d.style.top=(y-12)+"px"; box.appendChild(d);
+  var vx=(Math.random()-.5)*7, vy=-4-Math.random()*5, n=0, rot=(Math.random()-.5)*22, px=x-12, py=y-12, x0=x-12, y0=y-12;
+  (function stp(){
+    n++; vy+=.42; px+=vx; py+=vy;
+    d.style.transform="translate("+(px-x0)+"px,"+(py-y0)+"px) rotate("+(n*rot)+"deg)";
+    if(n>120||py>H+340){ d.remove(); return; }
+    if(n>100) d.style.opacity=String(1-(n-100)/20);
+    requestAnimationFrame(stp);
+  })();
+}
+document.getElementById("machine").addEventListener("pointerdown",function(e){
+  var box=this.parentNode, r=box.getBoundingClientRect();
+  for(var i=0;i<8;i++) setTimeout(function(){ dropCoin(e.clientX-r.left+(Math.random()-.5)*50, e.clientY-r.top); },i*45);
+  coinIn(); clank();
+});
+
+/* ---------------- shelf ---------------- */
+function paintShelf(won){
+  var h="";
+  PRIZE.forEach(function(p,i){
+    var got=won.indexOf(p.k)>=0;
+    h+='<div class="sl'+(got?"":" locked")+'"><div class="box"><img src="'+psrc(p.k)+'" alt="'+p.n.toLowerCase()+' plush, '+(got?"carried out of the machine":"still in the box")+'"></div>'+
+       '<b>'+p.n+'</b><p>'+p.p+'</p></div>';
+  });
+  document.getElementById("shelfGrid").innerHTML=h;
+}
+
+/* ---------------- live feed ---------------- */
+var HANDLES=["jeetmachine","topblaster","moonboy","rugsurvivor","gmfrens","paperhands","nightshift","marketbuy","copemedal","apeondesk","fomofinger","limitless"];
+var TAILS=[".sol",".rh",".eth","0x4f21","0x9d07","0xbeef"];
+var MISS=["dropped the fee at the rim","lost it on the lift","let go halfway","grazed it and moved on","had it, then did not","fumbled it over the chute","held it for two whole seconds"];
+function nfmt(n){ return n.toLocaleString("en-US"); }
+var feed=[], pot=48250, tries=12904, wins=37;
+function mkFeed(win){
+  var p=PRIZE[Math.floor(Math.random()*PRIZE.length)];
+  return { n:HANDLES[Math.floor(Math.random()*HANDLES.length)]+TAILS[Math.floor(Math.random()*TAILS.length)],
+           k:p.k, win:!!win, txt:win?("carried the fee off "+p.n.toLowerCase()):MISS[Math.floor(Math.random()*MISS.length)] };
+}
+for(var i=0;i<9;i++) feed.push(mkFeed(i===4));
+function paintFeed(fresh){
+  var h="";
+  for(var i=0;i<feed.length;i++){
+    var d=feed[i];
+    h+='<div class="row'+(i===fresh?" fresh":"")+'"><span class="rk">'+(i+1<10?"0":"")+(i+1)+'</span>'+
+       '<span class="sp2"><img src="'+psrc(d.k)+'" alt="the '+d.k+' plush at the machine"></span>'+
+       '<span class="hn">'+d.n+'</span>'+
+       '<span class="res '+(d.win?"win":"miss")+'">'+d.txt+'</span></div>';
+  }
+  document.getElementById("feedRows").innerHTML=h;
+}
+paintFeed(-1);
+function paintCounters(){
+  document.getElementById("cPot").textContent=nfmt(pot);
+  document.getElementById("cTries").textContent=nfmt(tries);
+  document.getElementById("cWins").textContent=nfmt(wins);
+  document.getElementById("feedLive").textContent="last coin "+(1+Math.floor(Math.random()*50))+"s ago";
+}
+paintCounters();
+setInterval(function(){
+  var win=Math.random()<.08;
+  feed.pop(); feed.unshift(mkFeed(win));
+  tries+=1+Math.floor(Math.random()*3);
+  if(win){ wins++; pot=1200+Math.floor(Math.random()*2600); }
+  else pot+=90+Math.floor(Math.random()*420);
+  paintFeed(0); paintCounters();
+},4200);
+
+/* ---------------- the cabinet game ---------------- */
+var cv=document.getElementById("cv"), cx=cv.getContext("2d");
+var LIVE=[];  /* plushes still in the box */
+var G={ phase:"aim", clawX:.5, dir:1, y:0, grip:0, gripPos:0, gripDir:1, target:-1, carry:null,
+        coins:0, potNow:0, won:[], drops:0, t:0, msg:"", msgT:0, shake:0, over:false, lastGrip:0 };
+var logBox=document.getElementById("log");
+function logIt(s,strong){
+  var d=document.createElement("div"); d.innerHTML=strong?("<b>"+s+"</b>"):s;
+  logBox.insertBefore(d,logBox.firstChild);
+  while(logBox.children.length>40) logBox.removeChild(logBox.lastChild);
+}
+function layoutPile(){
+  LIVE=[];
+  var slots=[[.11,.86],[.22,.90],[.33,.86],[.44,.90],[.55,.86],[.66,.90],[.17,.72],[.39,.72],[.61,.72]];
+  PRIZE.forEach(function(p,i){
+    if(G.won.indexOf(p.k)>=0) return;
+    var s=slots[i%slots.length];
+    LIVE.push({ k:p.k, n:PRIZE[i].n, x:s[0], y:s[1], w:.13+(i%3)*.012, bob:Math.random()*6 });
+  });
+}
+function paintHUD(){
+  document.getElementById("stPot").textContent="$"+nfmt(G.potNow);
+  document.getElementById("stCoins").textContent=G.coins;
+  document.getElementById("stWon").textContent=G.won.length;
+  document.getElementById("stDrops").textContent=G.drops;
+  document.getElementById("gripBar").style.width=Math.round(G.lastGrip*100)+"%";
+  document.getElementById("wonCount").textContent=G.won.length+" of 8 pulled out";
+  document.getElementById("phase").textContent=
+    G.over?"cabinet cleared":
+    (G.phase==="aim"?"waiting for a buy":
+    (G.phase==="desc"?"going down":
+    (G.phase==="grip"?"stop the meter!":
+    (G.phase==="lift"?"lifting":
+    (G.phase==="carry"?"carrying":"…")))));
+}
+function resetGame(){
+  G.phase="aim"; G.clawX=.5; G.y=0; G.grip=0; G.target=-1; G.carry=null;
+  G.coins=0; G.potNow=0; G.won=[]; G.drops=0; G.over=false; G.lastGrip=0; G.msg=""; G.shake=0;
+  document.getElementById("actBtn").disabled=false;
+  document.getElementById("actBtn").textContent="Drop the claw";
+  logBox.innerHTML="";
+  logIt("machine reset. nine memes in the box, nothing in the take yet.");
+  layoutPile(); paintShelf(G.won); paintHUD();
+}
+function nearestTarget(){
+  var best=-1, bd=9;
+  for(var i=0;i<LIVE.length;i++){
+    var d=Math.abs(LIVE[i].x-G.clawX);
+    if(d<bd){ bd=d; best=i; }
+  }
+  return {i:best,d:bd};
+}
+function say(m,t){ G.msg=m; G.msgT=t||1.6; }
+
+function startDrop(){
+  if(G.over||G.phase!=="aim") return;
+  G.coins++; G.potNow+=120+Math.floor(Math.random()*90);
+  coinIn(); servo();
+  G.phase="desc"; G.y=0;
+  var t=nearestTarget(); G.target=t.i; G.aimErr=t.d;
+  logIt("buy "+G.coins+" goes through. claw dropping into "+(t.i>=0?LIVE[t.i].n.toLowerCase():"nothing at all")+".");
+  document.getElementById("actBtn").textContent="Stop the grip!";
+  paintHUD();
+}
+function lockGrip(){
+  if(G.phase!=="grip") return;
+  var aimPart=Math.max(0,1-G.aimErr*7);           /* how centred the claw was */
+  var meterPart=G.gripPos;                         /* where you stopped the meter */
+  G.grip=Math.max(0,Math.min(1,(meterPart*.62+aimPart*.38)));
+  G.lastGrip=G.grip;
+  clank();
+  G.phase="lift"; G.carry={k:LIVE[G.target].k,n:LIVE[G.target].n,x:LIVE[G.target].x,y:LIVE[G.target].y};
+  document.getElementById("actBtn").textContent="Lifting…";
+  document.getElementById("actBtn").disabled=true;
+  logIt("grip locked at "+Math.round(G.grip*100)+"%.");
+  paintHUD();
+}
+function slip(stage){
+  G.drops++; G.carry=null; slipSound(); G.shake=1;
+  var where=stage==="lift"?"on the way up":(stage==="carry"?"halfway across the box":"right over the chute");
+  say("IT LET GO",1.8);
+  logIt("dropped the fee "+where+". into the pile it goes.",true);
+  G.phase="aim"; G.y=0;
+  document.getElementById("actBtn").textContent="Drop the claw";
+  document.getElementById("actBtn").disabled=false;
+  paintHUD();
+}
+function winPrize(){
+  var k=G.carry.k, nm=G.carry.n;
+  G.won.push(k);
+  var pot=G.potNow; G.potNow=0;
+  winSound(); say("PRIZE!",2.2);
+  logIt("carried the fee off "+nm.toLowerCase()+" all the way out · $"+nfmt(pot)+" split with the holders.",true);
+  for(var i=0;i<10;i++) setTimeout(function(){ dropCoin(Math.random()*window.innerWidth,-20,document.getElementById("rain")); },i*90);
+  G.carry=null; G.phase="aim"; G.y=0;
+  layoutPile(); paintShelf(G.won);
+  document.getElementById("actBtn").textContent="Drop the claw";
+  document.getElementById("actBtn").disabled=false;
+  if(G.won.length>=8){ G.over=true; document.getElementById("actBtn").disabled=true; showWin(); }
+  paintHUD();
+}
+
+function step(dt){
+  G.t+=dt;
+  if(G.msgT>0) G.msgT=Math.max(0,G.msgT-dt);
+  if(G.shake>0) G.shake=Math.max(0,G.shake-dt*2.5);
+  if(G.over) return;
+  if(G.phase==="aim"){
+    /* nothing automatic: the player lines it up */
+  }else if(G.phase==="desc"){
+    G.y+=dt*1.5;
+    if(Math.random()<dt*4) motor();
+    if(G.y>=1){ G.y=1; G.phase="grip"; G.gripPos=0; G.gripDir=1;
+      document.getElementById("actBtn").textContent="Stop the grip!"; }
+  }else if(G.phase==="grip"){
+    G.gripPos+=G.gripDir*dt*1.45;
+    if(G.gripPos>=1){ G.gripPos=1; G.gripDir=-1; }
+    if(G.gripPos<=0){ G.gripPos=0; G.gripDir=1; }
+  }else if(G.phase==="lift"){
+    G.y-=dt*1.1;
+    if(Math.random()<dt*3) motor();
+    if(G.y<=.55&&G.carry&&!G.checked1){ G.checked1=true;
+      if(Math.random()>G.grip*.80+.05){ slip("lift"); G.checked1=false; return; } }
+    if(G.y<=0){ G.y=0; G.checked1=false; G.phase="carry"; G.carryT=0; }
+  }else if(G.phase==="carry"){
+    G.carryT+=dt*.55;
+    if(Math.random()<dt*2) motor();
+    if(G.carryT>=.5&&G.carry&&!G.checked2){ G.checked2=true;
+      if(Math.random()>G.grip*.85+.03){ slip("carry"); G.checked2=false; G.carryT=0; return; } }
+    if(G.carryT>=1){
+      G.carryT=1; G.checked2=false;
+      if(Math.random()>G.grip*.86+.02){ slip("chute"); return; }
+      winPrize();
+    }
+  }
+}
+
+/* ---- drawing ---- */
+function rr(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
+function draw(){
+  var W=cv.width, H=cv.height;
+  var sh=G.shake>0?(Math.random()-.5)*14*G.shake:0;
+  cx.save(); cx.translate(sh,0);
+  /* cabinet interior */
+  cx.fillStyle="#12131c"; cx.fillRect(-20,0,W+40,H);
+  var gl=cx.createLinearGradient(0,0,0,H); gl.addColorStop(0,"#1b2b3d"); gl.addColorStop(1,"#0d1018");
+  cx.fillStyle=gl; cx.fillRect(34,26,W-68,H-56);
+  cx.strokeStyle="#d92d2d"; cx.lineWidth=10; cx.strokeRect(34,26,W-68,H-56);
+  cx.strokeStyle="#151016"; cx.lineWidth=4; cx.strokeRect(34,26,W-68,H-56);
+  /* glass shine */
+  cx.save(); cx.beginPath(); cx.rect(34,26,W-68,H-56); cx.clip();
+  cx.strokeStyle="rgba(255,255,255,.10)"; cx.lineWidth=16;
+  for(var i=0;i<5;i++){ cx.beginPath(); cx.moveTo(80+i*180,40); cx.lineTo(10+i*180,H-40); cx.stroke(); }
+  cx.restore();
+  /* floor of the box */
+  cx.fillStyle="#25182a"; cx.fillRect(40,H-118,W-80,86);
+  /* the chute */
+  cx.fillStyle="#0a0b10"; rr(cx,W-186,H-196,136,164,6); cx.fill();
+  cx.strokeStyle="#ffc62b"; cx.lineWidth=5; rr(cx,W-186,H-196,136,164,6); cx.stroke();
+  cx.fillStyle="rgba(255,198,43,.18)"; cx.fillRect(W-180,H-190,124,152);
+  cx.fillStyle="#ffc62b"; cx.font="17px 'IBM Plex Mono', monospace"; cx.textAlign="center";
+  cx.fillText("CHUTE",W-118,H-210);
+  /* pot of coins under the glass */
+  var coinsShown=Math.min(26,Math.floor(G.potNow/90));
+  for(var i=0;i<coinsShown;i++){
+    var cxp=70+((i*53)%(W-320)), cyp=H-56+Math.sin(i*2.3)*6;
+    cx.fillStyle="#e8b420"; cx.beginPath(); cx.arc(cxp,cyp,11,0,7); cx.fill();
+    cx.strokeStyle="#151016"; cx.lineWidth=2; cx.stroke();
+  }
+  cx.fillStyle="#fff3e2"; cx.font="15px 'IBM Plex Mono', monospace"; cx.textAlign="left";
+  cx.fillText("IN THE BOX: $"+nfmt(G.potNow),52,H-16);
+
+  /* the pile */
+  for(var i=0;i<LIVE.length;i++){
+    var p=LIVE[i], im=IMG[p.k];
+    if(!im||!im.complete||!im.naturalWidth) continue;
+    var iw=W*p.w, ih=iw*(im.naturalHeight/im.naturalWidth);
+    var bob=Math.sin(G.t*1.4+p.bob)*3;
+    if(G.carry&&G.target===i) continue;
+    cx.save(); cx.imageSmoothingEnabled=false;
+    cx.drawImage(im,p.x*W-iw/2,p.y*H-ih+bob,iw,ih);
+    cx.restore();
+  }
+
+  /* rail */
+  cx.fillStyle="#6b7280"; cx.fillRect(44,44,W-88,14);
+  cx.strokeStyle="#151016"; cx.lineWidth=3; cx.strokeRect(44,44,W-88,14);
+
+  /* claw position */
+  var clawScreenX=48+G.clawX*(W-96);
+  var carryProg=(G.phase==="carry")?G.carryT:0;
+  if(G.phase==="carry"){
+    var toX=W-114;
+    clawScreenX=clawScreenX+(toX-clawScreenX)*carryProg;
+  }
+  var topY=58, maxDown=H-210;
+  var clawY=topY+G.y*maxDown;
+  /* cable */
+  cx.strokeStyle="#9aa3ad"; cx.lineWidth=4;
+  cx.beginPath(); cx.moveTo(clawScreenX,52); cx.lineTo(clawScreenX,clawY); cx.stroke();
+  /* carriage */
+  cx.fillStyle="#4b5563"; cx.fillRect(clawScreenX-26,40,52,22);
+  cx.strokeStyle="#151016"; cx.lineWidth=3; cx.strokeRect(clawScreenX-26,40,52,22);
+  /* claw arms */
+  var open=(G.phase==="aim"||G.phase==="desc")?1:(G.phase==="grip"?.6:Math.max(.12,1-G.grip));
+  cx.strokeStyle="#c7ccd4"; cx.lineWidth=9; cx.lineCap="round";
+  [-1,1].forEach(function(s){
+    cx.beginPath();
+    cx.moveTo(clawScreenX,clawY);
+    cx.lineTo(clawScreenX+s*26*open,clawY+30);
+    cx.lineTo(clawScreenX+s*13*open,clawY+58);
+    cx.stroke();
+  });
+  cx.fillStyle="#9aa3ad"; cx.beginPath(); cx.arc(clawScreenX,clawY,13,0,7); cx.fill();
+  cx.strokeStyle="#151016"; cx.lineWidth=3; cx.stroke();
+
+  /* carried plush */
+  if(G.carry){
+    var im2=IMG[G.carry.k];
+    if(im2&&im2.complete){
+      var iw2=W*.13, ih2=iw2*(im2.naturalHeight/im2.naturalWidth);
+      cx.save(); cx.imageSmoothingEnabled=false;
+      cx.drawImage(im2,clawScreenX-iw2/2,clawY+34,iw2,ih2);
+      cx.restore();
+    }
+  }
+
+  /* aim guide */
+  if(G.phase==="aim"&&!G.over){
+    cx.strokeStyle="rgba(255,198,43,.5)"; cx.setLineDash([8,10]); cx.lineWidth=3;
+    cx.beginPath(); cx.moveTo(clawScreenX,clawY+58); cx.lineTo(clawScreenX,H-120); cx.stroke();
+    cx.setLineDash([]);
+  }
+
+  /* grip meter on canvas */
+  if(G.phase==="grip"){
+    var mw=W*.5, mx=W/2-mw/2, my=110;
+    cx.fillStyle="#0a0b10"; rr(cx,mx,my,mw,34,4); cx.fill();
+    cx.strokeStyle="#ffc62b"; cx.lineWidth=3; rr(cx,mx,my,mw,34,4); cx.stroke();
+    var grad=cx.createLinearGradient(mx,0,mx+mw,0);
+    grad.addColorStop(0,"#9b1414"); grad.addColorStop(.6,"#d92d2d"); grad.addColorStop(1,"#2fa84f");
+    cx.fillStyle=grad; cx.fillRect(mx+4,my+4,(mw-8)*G.gripPos,26);
+    cx.fillStyle="#fff3e2"; cx.font="15px 'IBM Plex Mono', monospace"; cx.textAlign="center";
+    cx.fillText("STOP THE GRIP",W/2,my-10);
+  }
+
+  /* message */
+  if(G.msgT>0){
+    cx.font="34px 'Press Start 2P', monospace"; cx.textAlign="center";
+    cx.fillStyle="#151016"; cx.fillText(G.msg,W/2+4,H/2-26+4);
+    cx.fillStyle=G.msg==="PRIZE!"?"#ffc62b":"#ff6b6b"; cx.fillText(G.msg,W/2,H/2-26);
+  }
+
+  if(G.over){
+    cx.fillStyle="rgba(10,11,16,.84)"; cx.fillRect(0,0,W,H);
+    cx.fillStyle="#ffc62b"; cx.font="26px 'Press Start 2P', monospace"; cx.textAlign="center";
+    cx.fillText("CABINET CLEARED",W/2,H/2-10);
+    cx.fillStyle="#fff3e2"; cx.font="15px 'IBM Plex Mono', monospace";
+    cx.fillText(G.coins+" buys · "+G.drops+" drops · 8 fees carried out",W/2,H/2+26);
+  }
+  cx.restore();
+  cx.textAlign="left";
+}
+
+var lastT=performance.now();
+setInterval(function(){
+  var now=performance.now(), dt=Math.min(.12,(now-lastT)/1000); lastT=now;
+  step(dt);
+  if(!document.hidden) draw();
+},1000/60);
+
+/* ---------------- input ---------------- */
+var actBtn=document.getElementById("actBtn");
+function act(){
+  ac();
+  if(G.over) return;
+  if(G.phase==="aim") startDrop();
+  else if(G.phase==="grip") lockGrip();
+}
+actBtn.addEventListener("click",act);
+document.getElementById("leftBtn").addEventListener("click",function(){ moveClaw(-.055); });
+document.getElementById("rightBtn").addEventListener("click",function(){ moveClaw(.055); });
+function moveClaw(d){
+  if(G.phase!=="aim"||G.over) return;
+  G.clawX=Math.max(.04,Math.min(.96,G.clawX+d));
+  servo();
+}
+var dragging=false;
+function cvX(e){
+  var r=cv.getBoundingClientRect();
+  return Math.max(.04,Math.min(.96,(e.clientX-r.left)/r.width));
+}
+cv.addEventListener("pointerdown",function(e){
+  ac();
+  if(G.phase==="aim"&&!G.over){ dragging=true; G.clawX=cvX(e); servo(); }
+  else act();
+});
+window.addEventListener("pointermove",function(e){ if(dragging&&G.phase==="aim") G.clawX=cvX(e); });
+window.addEventListener("pointerup",function(){ dragging=false; });
+document.addEventListener("keydown",function(e){
+  if(e.code==="ArrowLeft"){ e.preventDefault(); moveClaw(-.045); }
+  else if(e.code==="ArrowRight"){ e.preventDefault(); moveClaw(.045); }
+  else if(e.code==="Space"){ e.preventDefault(); act(); }
+});
+document.getElementById("resetBtn").onclick=resetGame;
+
+/* ---------------- win card ---------------- */
+function showWin(){
+  var h="";
+  G.won.forEach(function(k){ h+='<img src="'+psrc(k)+'" alt="a plush that made it out">'; });
+  document.getElementById("winRow").innerHTML=h;
+  document.getElementById("winText").textContent="Eight fees carried out of one very weak claw, across "+G.coins+" buys and "+G.drops+" trips back into the pile. The guy at the back has still never paid one.";
+  document.getElementById("winWrap").classList.add("show");
+  winSound();
+}
+document.getElementById("winClose").onclick=function(){ document.getElementById("winWrap").classList.remove("show"); };
+
+resetGame();
+</script>
+</body>
+</html>
